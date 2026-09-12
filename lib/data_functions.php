@@ -6343,7 +6343,8 @@ function call_llm_internal() {
                             error_log("[ACTION POSTFILTER TravelTo]  $localtarget => {$mang4[0]} => $destination");
 
                             $destinationName=$GLOBALS["db"]->escape(trim($destination));
-                            $dbDestination=$GLOBALS["db"]->fetchOne("SELECT name, similarity(name, '$destinationName') AS sim,formid FROM locations ORDER BY sim DESC LIMIT 1");
+                            //when world='' then 0 else 1 -> gives priority to locations with a world set (Skyrim, Whiterun,...)
+                            $dbDestination=$GLOBALS["db"]->fetchOne("SELECT name, similarity(name, '$destinationName') AS sim,formid FROM locations ORDER BY sim DESC,case when world='' then 0 else 1 end DESC LIMIT 1");
                             $dbDestinationRegion=$GLOBALS["db"]->fetchOne("SELECT name, similarity(region, '$destinationName') AS sim,formid FROM locations ORDER BY sim DESC LIMIT 1");
 
                             $contextDestinations=DataPosibleLocationsToGo();
