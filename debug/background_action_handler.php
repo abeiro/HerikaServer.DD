@@ -175,10 +175,10 @@ function handleTravelToAction($location, $currentNpcData, $npcName, $last_ts, $l
                 'category' => 'error',
             ]
         );
-        $npc=new NpcMaster();
+        $npc = new NpcMaster();
         $npcData = $npc->getByName($npcName);
         $extendedData = $npc->getExtendedData($npcData);
-        triggerNpcUpdate($npcName,+$extendedData['background_life_last_updated_ec']);
+        triggerNpcUpdate($npcName, +$extendedData['background_life_last_updated_ec']);
         return false;
     }
 
@@ -349,7 +349,7 @@ function handleStayAtPlaceAction($location, $currentNpcData, $npcName, $last_ts,
     if (strtolower($intent) === 'socialize') {
         // If last intent was not socialize, we will trigger an update to the NPC to make it more dynamic and social.
         if (strtolower($previousIntent['category']) !== 'socialize') {
-            if (rand(0, 4)==0) {
+            if (rand(0, 4) == 0) {
                 triggerNpcUpdate($npcName);
             }
         }
@@ -653,9 +653,9 @@ function handleMoveToAction($targetNpcName, $currentNpcData, $npcName, $last_ts,
 
     if ($targetNpc === null) {
         error_log("[handleMoveToAction] Target NPC not found: $targetNpcName");
-        $locationCandidate=resolveTravelLocation($targetNpcName, $currentNpcData, $db);
+        $locationCandidate = resolveTravelLocation($targetNpcName, $currentNpcData, $db);
 
-        if ( $locationCandidate && isset($locationCandidate["sim"]) && $locationCandidate["sim"] > _LOCATION_RESOLVE_SIM_THRESHOLD) {
+        if ($locationCandidate && isset($locationCandidate["sim"]) && $locationCandidate["sim"] > _LOCATION_RESOLVE_SIM_THRESHOLD) {
             $db->insert('eventlog', [
                 'ts' => $last_ts,
                 'gamets' => $last_gamets + 5,
@@ -1009,7 +1009,7 @@ function handleFindNPCAction($targetNpcName, $currentNpcData, $npcName, $last_ts
                 'category' => 'error',
             ]
         );
-        $extdata=$npcMaster->getExtendedData($currentNpcData);
+        $extdata = $npcMaster->getExtendedData($currentNpcData);
         triggerNpcUpdate($npcName, ++$extdata["background_life_last_updated_ec"]); // Force NPC to update its background life data on the next mid-term check, which should lead it to discover the new location and update accordingly.
     }
 
@@ -1113,7 +1113,7 @@ function handleSpeakToAction($targetNpcName, $currentNpcData, $npcName, $last_ts
             if (!gameIsPaused())
                 $retryCount++;
             else
-                $retryCount=$retryCount+0.1;
+                $retryCount = $retryCount + 0.1;
             sleep(1);
         }
     }
@@ -1232,7 +1232,7 @@ function handleSpeakToAction($targetNpcName, $currentNpcData, $npcName, $last_ts
         $dialogueBuffer = $connectionHandler->fast_request($dialoguePrompt, ['MAX_TOKENS' => 512], 'backgroundlife');
         updateLastLLMCall($GLOBALS["HERIKA_NAME"]);
 
-        if (!empty($dialogueBuffer)) {
+        if ($dialogueBuffer && !empty(trim($dialogueBuffer))) {
             error_log("[handleSpeakToAction] Generated dialogue between $npcName and $resolvedName.");
 
             $db->insert('eventlog', [
@@ -1246,21 +1246,38 @@ function handleSpeakToAction($targetNpcName, $currentNpcData, $npcName, $last_ts
                 'location' => $lastEventLocation,
                 'party' => '',
             ]);
-        }
-        triggerNpcUpdate($npcName);
 
-        // Insert bgl_history log entry
-        $db->insert(
-            'bgl_history',
-            [
-                'npc' => $npcName,
-                'ts' => $last_ts,
-                'gamets' => $last_gamets + 20,
-                'localts' => time(),
-                'data' => "$npcName has a conversation with $resolvedName\nDialogue: $dialogueBuffer\nReason: {$GLOBALS["LAST_REASON"]}",
-                'category' => 'dialogue',
-            ]
-        );
+            triggerNpcUpdate($npcName);
+
+            // Insert bgl_history log entry
+            $db->insert(
+                'bgl_history',
+                [
+                    'npc' => $npcName,
+                    'ts' => $last_ts,
+                    'gamets' => $last_gamets + 20,
+                    'localts' => time(),
+                    'data' => "$npcName has a conversation with $resolvedName\nDialogue: $dialogueBuffer\nReason: {$GLOBALS["LAST_REASON"]}",
+                    'category' => 'dialogue',
+                ]
+            );
+        } else {
+              $db->insert(
+                'bgl_history',
+                [
+                    'npc' => $npcName,
+                    'ts' => $last_ts,
+                    'gamets' => $last_gamets + 20,
+                    'localts' => time(),
+                    'data' => "Error generating dialogue for $npcName with $resolvedName. Reason: {$GLOBALS["LAST_REASON"]}",
+                    'category' => 'dialogue',
+                ]
+            );
+            $npc = new NpcMaster();
+            $npcData = $npc->getByName($npcName);
+            $extendedData = $npc->getExtendedData($npcData);
+            triggerNpcUpdate($npcName, +$extendedData['background_life_last_updated_ec']);
+        }
     }
 
     return true;
@@ -1745,7 +1762,7 @@ function handleTradeItemsAction($tradeType, $actionArgument, $currentNpcData, $n
 
     $processed = 0;
     $targetRefsToRefresh = [];
-    $targetNpcNames="";
+    $targetNpcNames = "";
     foreach ($transactions as $transactionRaw) {
         $args = array_map('trim', explode(':', $transactionRaw));
         $targetNpcName = $args[0] ?? '';
@@ -1756,7 +1773,7 @@ function handleTradeItemsAction($tradeType, $actionArgument, $currentNpcData, $n
         // - GiveItemTo:Target:itemid:count:0
         $gold = isset($args[3]) ? (int) $args[3] : 0;
 
-        
+
         $isMalformed = ($targetNpcName === '' || $itemId === '' || $count <= 0);
         $itemId = preg_replace('/^0x/i', '', strtolower($itemId));
         if ($tradeType !== 'GiveItemTo' && $gold <= 0) {
@@ -1790,7 +1807,7 @@ function handleTradeItemsAction($tradeType, $actionArgument, $currentNpcData, $n
         }
 
         $targetNpc = resolveNpcByName($targetNpcName, $db);
-        $targetNpcNames.= $targetNpcName;
+        $targetNpcNames .= $targetNpcName;
         if ($targetNpc === null) {
             error_log("[handleTradeItemsAction] [$tradeType] Target NPC not found: $targetNpcName");
             $db->insert(
@@ -1809,7 +1826,7 @@ function handleTradeItemsAction($tradeType, $actionArgument, $currentNpcData, $n
 
         $resolvedName = $targetNpc['name'];
         $targetRefHexString = strtolower(convertSignedToUnsignedHex(hexdec($targetNpc['refid'])));
-        
+
 
         if ($tradeType === 'BuyItem') {
             // Buyer receives item and pays gold; seller loses item and receives gold.
