@@ -638,7 +638,7 @@ Must sell fish to merchants,(e.g at Candlehearth Hall), innkeepers and citizens 
 if ($argv[1] == '9a') {
 
     $npcMaster = new NpcMaster();
-    $npcname = "Jaryra";
+    $npcname = "Gularzob";
     $npc = $npcMaster->getByName($npcname);
 
     $GLOBALS["db"]->insert(
@@ -1330,6 +1330,21 @@ if ($argv[1] == '39') {
                 'action' => 'command'
             )
         );
+
+        $npcMaster = new NpcMaster();
+        $npc = $npcMaster->getByName($argv[3]);
+
+        $skyrimCmd = new SkyrimCommandBuilder();
+
+        //Stop reading animation
+
+        $json = $skyrimCmd->Actor->SetHeadTracking("0x{$npc["refid"]}", false);
+        $skyrimCmd->send(cmd: $json);
+
+        $json = $skyrimCmd->Actor->EvaluatePackage("0x{$npc["refid"]}");
+        $skyrimCmd->send(cmd: $json);
+
+
     }
 }
 
@@ -1460,7 +1475,7 @@ if ($argv[1] == "48") {
 
     $npcMaster = new NpcMaster();
     $npcname = "Grosta";
-    $npc= $npcMaster->getByName($npcname);
+    $npc = $npcMaster->getByName($npcname);
     $skyrimCmd = new SkyrimCommandBuilder();
 
     $json = $skyrimCmd->Actor->AddToFaction("0x{$npc["refid"]}", "0x0001dd09"); //WEPlayerFriend
@@ -1474,3 +1489,17 @@ if ($argv[1] == "48") {
 }
 
 
+if ($argv[1] == '49') {
+
+
+
+    $skyrimCmd = new SkyrimCommandBuilder();
+    $npc["refid"] = "14";
+
+    $json = $skyrimCmd->Actor->PlayIdle("0x{$npc["refid"]}", "0x000b5e20");
+    $skyrimCmd->send(cmd: $json);
+
+    $json = $skyrimCmd->Actor->EvaluatePackage("0x{$npc["refid"]}");
+    $skyrimCmd->send(cmd: $json);
+
+}
