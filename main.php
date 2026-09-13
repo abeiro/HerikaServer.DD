@@ -1,4 +1,10 @@
 <?php
+require_once __DIR__ . '/lib/chim_interaction.php';
+$interactionData = base64_decode((string)($_GET['DATA'] ?? ''), true);
+$interactionType = strtolower(explode('|', (string)$interactionData, 2)[0]);
+if (chimInteractionIsTrigger($interactionType)) chimInteractionRequire();
+require_once __DIR__ . "/lib/playthrough_guard.php";
+pgr_http_preflight("main");
 
 /* Definitions and main includes */
 error_reporting(E_ALL);
@@ -135,6 +141,7 @@ MAIN FLOW
 
 $gameRequest = explode("|", $receivedData);
 $GLOBALS["gameRequest"] = &$gameRequest;
+if (chimInteractionIsTrigger($gameRequest[0])) chimInteractionRequire();
 unset($GLOBALS["CHIM_TURN_PEOPLE_SNAPSHOT"]);
 unset($GLOBALS["CHIM_CHAT_SHORTCUT_ROUTED"]);
 $requestRoutingSnapshot = chimDecodePlayerRoutingSnapshotField($gameRequest[4] ?? "");
@@ -260,6 +267,8 @@ if (in_array($gameRequest[0],["addnpc"])) {
 
 if (($gameRequest[0]=="playerinfo")||(($gameRequest[0]=="newgame"))) {
     sleep(1);   // Give time to populate data
+
+    chimMaybeSyncPlayerName(chimExtractPlayerNameFromGamePayload($gameRequest[3] ?? ''), true);
 
     // Load/newgame is a hard scene boundary. Rolemaster scene notes are transient
     // director state; do not let them bleed across save/load into normal chat.
@@ -987,9 +996,7 @@ if (in_array($gameRequest[0],["info","infonpc","infonpc_close","infoloc","infoit
 
 // Check if the gameRequest matches specific types
 if (in_array($gameRequest[0], ["playerinfo", "newgame"])) {
-    // NOTE: Automatic player name detection from game is disabled
-    // Player name is now managed through Player Management UI or quickstart menu
-    // This was formerly: Update player name from playerinfo event
+    // Player identity was synced at the load boundary above.
     logEvent($gameRequest);
     terminate();
 }
@@ -1123,6 +1130,14 @@ requireFilesRecursively(__DIR__.DIRECTORY_SEPARATOR."ext".DIRECTORY_SEPARATOR,"p
 // Most called events: 'request,'infonpc','infonpc_close'.
 
 require(__DIR__.DIRECTORY_SEPARATOR."processor".DIRECTORY_SEPARATOR."comm.php");
+// Communication handlers still record quests, loads and vanilla dialogue while interaction is Off.
+if (!chimInteractionAllowed()) {
+    if (!$MUST_END && empty($GLOBALS['chim_interaction_observed']) && !chimInteractionIsTrigger($gameRequest[0])) {
+        logEvent($gameRequest);
+    }
+    terminate();
+}
+
 
 
 if (in_array($gameRequest[0],["rechat","narration"]) ) {
@@ -1528,6 +1543,8 @@ if ($EXECUTION_MODE=="INJECTION_LOG") {
     terminate();
 
 }
+
+chimInteractionRequire();
 
 // What is this for?
 if (in_array($gameRequest[0], ["continue", "continue_group"], true) && empty($GLOBALS["RECHAT_PREVIOUS_SPEAKER"])) {

@@ -8349,9 +8349,35 @@ if ($checkVersion("core_tts_pronunciation") < 20260901002) {
     }
 }
 
+if ($checkVersion('responselog_interaction') < 20260912001) {
+    if ($GLOBALS['db']->query('ALTER TABLE public.responselog ADD COLUMN IF NOT EXISTS interaction_generation bigint')) {
+        $updateVersion('responselog_interaction', 20260912001);
+    }
+}
+
 Logger::info(__FILE__." update file processed");
 
 //----------------------------------------------------
         
 Logger::info(__FILE__." update file processed. This file has ".__LINE__." lines.");
+
+// Install durable event accounting before refreshing the snapshot schema.
+if ($GLOBALS['db']->query(file_get_contents(dirname(__DIR__) . '/lib/dynamic_profile_scheduler.sql')) === false) {
+    throw new RuntimeException('Dynamic profile migration failed.');
+}
+
+// Keep the installed snapshot functions and pgAdmin comments aligned with the current table policy.
+require_once dirname(__DIR__) . '/lib/playthrough_schema.php';
+require_once dirname(__DIR__) . '/lib/playthrough_preferences.php';
+$playthroughPolicyConn = ptp_connect();
+if ($playthroughPolicyConn) {
+    try {
+        if (!pts_update_playthrough_policy($playthroughPolicyConn)) {
+            Logger::error('Playthrough Save table policy update failed; retry the database update.');
+        }
+    } finally { pg_close($playthroughPolicyConn); }
+} else {
+    Logger::error('Cannot connect to update the Playthrough Save table policy.');
+}
+
 ?>
