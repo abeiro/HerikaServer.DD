@@ -60,12 +60,28 @@ if ($minimeEnabled) {
 
         }
 
+        // Scene genre switches are read before the dialogue history so a switched-off classifier makes no
+        // history query or provider request. An enabled Decision Connector owns scene genre: with its Scene
+        // Classifier off, Scene Classifier (Legacy) is not used. scene_status is still updated below.
+        $decisionConnectorEnabled = chimIsGlobalLlmConnectorEnabled('CORE_CONNECTOR_DECISION');
+        $decisionSceneClassifierEnabled = chimIsDecisionSceneClassifierEnabled();
+        $sceneClassifierEnabled = true;
+        if (array_key_exists("SCENE_CLASSIFIER_ENABLED", $GLOBALS)) {
+            $sceneClassifierEnabledValue = $GLOBALS["SCENE_CLASSIFIER_ENABLED"];
+            if (is_string($sceneClassifierEnabledValue)) {
+                $sceneClassifierEnabled = !in_array(strtolower(trim($sceneClassifierEnabledValue)), ["", "0", "false", "off", "no"], true);
+            } else {
+                $sceneClassifierEnabled = !empty($sceneClassifierEnabledValue);
+            }
+        }
+        $sceneGenreWanted = $decisionConnectorEnabled ? $decisionSceneClassifierEnabled : $sceneClassifierEnabled;
+
         $historyData = "";
         $lastPlace = "";
         $lastListener = "";
         $lastDateTime = "";
 
-        foreach (json_decode(DataSpeechJournal($GLOBALS["HERIKA_NAME"], 10), true) as $element) {
+        foreach (($sceneGenreWanted ? json_decode(DataSpeechJournal($GLOBALS["HERIKA_NAME"], 10), true) : []) as $element) {
             if ($element["listener"] == "The Narrator") {
                 continue;
             }
@@ -99,18 +115,59 @@ if ($minimeEnabled) {
 
         $status = "default";
         //$topic  = json_decode(minimePostScene($historyData), true);// Not working well for now.
-        $sceneClassifierEnabled = true;
-        if (array_key_exists("SCENE_CLASSIFIER_ENABLED", $GLOBALS)) {
-            $sceneClassifierEnabledValue = $GLOBALS["SCENE_CLASSIFIER_ENABLED"];
-            if (is_string($sceneClassifierEnabledValue)) {
-                $sceneClassifierEnabled = !in_array(strtolower(trim($sceneClassifierEnabledValue)), ["", "0", "false", "off", "no"], true);
-            } else {
-                $sceneClassifierEnabled = !empty($sceneClassifierEnabledValue);
-            }
-        }
 
+        $genreCriteria = [
+            "horror" => "The dialogue is primarily frightening, supernatural, or disturbing.",
+            "action" => "The dialogue centers on immediate physical conflict, danger, or fast-paced events.",
+            "thriller" => "The dialogue centers on suspense, imminent danger, or tense uncertainty.",
+            "mystery" => "The dialogue centers on an unresolved question, investigation, or hidden truth.",
+            "romance" => "The dialogue centers on romantic attraction, intimacy, or a relationship.",
+            "comedy" => "The dialogue is primarily humorous, playful, or intended to amuse.",
+            "drama" => "The dialogue centers on serious emotional conflict or consequential personal events.",
+            "nsfw" => "The dialogue is primarily sexually explicit or adult in nature.",
+            "default" => "No listed genre clearly describes the current dialogue.",
+        ];
+
+        // An enabled Decision Connector replaces the legacy classifier. Each path makes at most one
+        // request; a failed, missing or uncertain answer keeps the default genre without a retry.
         $topic = ["generated_tags" => "default"];
-        if ($sceneClassifierEnabled) {
+        if ($decisionConnectorEnabled && !$decisionSceneClassifierEnabled) {
+            Logger::info("[SCENE CLASSIFIER] Decision Connector Scene Classifier is off, skipping scene genre detection");
+        } else if ($decisionConnectorEnabled) {
+            $connector = new LLMConnector();
+            $decisionConnectorId = intval($GLOBALS["CORE_CONNECTOR_DECISION"] ?? 0);
+            $decisionConnectorData = $decisionConnectorId > 0 ? $connector->getById($decisionConnectorId) : null;
+            $decisionResponse = [];
+            if (!chimIsDecisionConnector($decisionConnectorData)) {
+                Logger::warn("[SCENE CLASSIFIER] Decision Connector is not an OpenRouter decision connector, skipping scene genre detection");
+            } else {
+                $connector->setOldGlobals($decisionConnectorData);
+                if (trim((string) ($GLOBALS["CONNECTOR"]["openrouterjson"]["API_KEY"] ?? "")) === "") {
+                    Logger::warn("[SCENE CLASSIFIER] Decision Connector has no API key, skipping scene genre detection");
+                } else {
+                    $decisionResponse = $connector->getConnector($decisionConnectorData)->jev_request(
+                        ["dialogue" => $historyData],
+                        "Choose the dominant genre of the recent dialogue between the actors.",
+                        $genreCriteria,
+                        "sceneclassifier"
+                    );
+                }
+            }
+
+            $genreDecision = is_array($decisionResponse) ? ($decisionResponse["answers"]["genre"] ?? null) : null;
+            $genreChoice = is_array($genreDecision) ? ($genreDecision["choice"] ?? null) : null;
+            $genreConfidence = is_array($genreDecision) ? ($genreDecision["confidence"] ?? null) : null;
+            if (is_string($genreChoice) && (is_int($genreConfidence) || is_float($genreConfidence))
+                && is_finite((float) $genreConfidence) && $genreConfidence <= 1
+                && $genreConfidence > __JEV_CONFIDENCE_THRESHOLD) {
+                $genreChoice = strtolower(trim($genreChoice));
+                if (array_key_exists($genreChoice, $genreCriteria)) {
+                    $topic = ["generated_tags" => $genreChoice];
+                }
+            }
+
+            Logger::info("[SCENE CLASSIFIER] Decision Connector genre: {$topic["generated_tags"]}");
+        } else if ($sceneClassifierEnabled) {
             $connector = new LLMConnector();
             $sceneClassifierLabels = [
                 "Gemma 3 4B",
@@ -149,49 +206,43 @@ if ($minimeEnabled) {
                 $currentConnectorData = $connector->getById($mediumTermConnectorId);
             }
 
-            if (!empty($currentConnectorData)) {
+            if (!empty($currentConnectorData) && chimIsDecisionConnector($currentConnectorData)) {
+                Logger::warn("[SCENE CLASSIFIER] Scene Classifier (Legacy) needs a chat model, not a decision connector; skipping scene genre detection");
+            } else if (!empty($currentConnectorData)) {
                 $connector->setOldGlobals($currentConnectorData);
                 $connectionHandler = $connector->getConnector($currentConnectorData);
             } else {
                 Logger::warn("[SCENE CLASSIFIER] No connector configured for scene classification, skipping scene genre detection");
             }
 
-            $genreCriteria = [
-                "horror" => "The dialogue is primarily frightening, supernatural, or disturbing.",
-                "action" => "The dialogue centers on immediate physical conflict, danger, or fast-paced events.",
-                "thriller" => "The dialogue centers on suspense, imminent danger, or tense uncertainty.",
-                "mystery" => "The dialogue centers on an unresolved question, investigation, or hidden truth.",
-                "romance" => "The dialogue centers on romantic attraction, intimacy, or a relationship.",
-                "comedy" => "The dialogue is primarily humorous, playful, or intended to amuse.",
-                "drama" => "The dialogue centers on serious emotional conflict or consequential personal events.",
-                "nsfw" => "The dialogue is primarily sexually explicit or adult in nature.",
-                "default" => "No listed genre clearly describes the current dialogue.",
-            ];
+            $allowedGenres = array_values(array_diff(array_keys($genreCriteria), ["default"]));
 
-            $decisionResponse = [];
-            if ($connectionHandler && method_exists($connectionHandler, 'jev_request')) {
-                $decisionResponse = $connectionHandler->jev_request(
-                    ["dialogue" => $historyData],
-                    "Choose the dominant genre of the recent dialogue between the actors.",
-                    $genreCriteria,
+            $prompt = [];
+            $prompt[] = ['role' => 'system', 'content' => "Classify the following dialogue into one of these genres: ".
+                implode(", ", $allowedGenres)];
+
+            $prompt[] = ['role' => 'user', 'content' => "Dialogue:\n$historyData"];
+            $prompt[] = ['role' => 'user', 'content' => "Respond only with the genre name."];
+
+            $buffer = "";
+            if ($connectionHandler) {
+                $buffer = $connectionHandler->fast_request(
+                    $prompt,
+                    ["MAX_TOKENS" => 256],
                     "sceneclassifier"
                 );
-            } else if ($connectionHandler) {
-                Logger::warn("[SCENE CLASSIFIER] Selected connector does not support OpenRouter JEV decisions");
             }
 
-            $genreDecision = $decisionResponse["answers"]["genre"] ?? $decisionResponse["answers"]["genre"] ?? "default";
-            if (is_array($genreDecision) && isset($genreDecision["confidence"]) && $genreDecision["confidence"]>__JEV_CONFIDENCE_THRESHOLD) {
-                $genreDecision = $genreDecision["choice"] ?? "default";
-            }
-            $detectedGenre = strtolower(trim((string) $genreDecision));
-            if (!array_key_exists($detectedGenre, $genreCriteria)) {
-                $detectedGenre = "default";
+            // Parse LLM output to find matching genre
+            $bufferLower = is_string($buffer) ? strtolower(trim($buffer)) : "";
+            foreach ($allowedGenres as $genre) {
+                if ($bufferLower !== "" && stripos($bufferLower, $genre) !== false) {
+                    $topic = ["generated_tags" => $genre];
+                    break;
+                }
             }
 
-            $topic = ["generated_tags" => $detectedGenre];
-
-            Logger::info("[SCENE CLASSIFIER] Detected genre: {$topic["generated_tags"]}");
+            Logger::info("[SCENE CLASSIFIER] Scene Classifier (Legacy) genre: {$topic["generated_tags"]}");
         } else {
             Logger::info("[SCENE CLASSIFIER] Disabled, skipping scene genre detection");
         }
