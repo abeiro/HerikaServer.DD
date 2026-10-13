@@ -1726,4 +1726,27 @@ if ($argv[1] == '57') {
     $json = $skyrimCmd->Actor->SetRelationshipRank("0x{$npc["refid"]}", "0x14", 4); //WEPlayerFriend
     $skyrimCmd->send(cmd: $json);
 }
+
+if ($argv[1] == '58') {
+    $npcMaster = new NpcMaster();
+    $npc = $npcMaster->restoreLastNpcList();
+
+    
+}
  
+if ($argv[1] == '59') {
+    // Example for future experiment
+    //Xana|command|ExtCmdConsumeSoul@Muazzaz Chriane [RefID: 00015A58]
+    
+    $GLOBALS["db"]->insert(
+        'responselog',
+        array(
+            'localts' => time(),
+            'sent' => 0,
+            'text' => "ExtCmdConsumeSoul@Muazzaz Chriane",
+            'actor' => "Xana",
+            'action' => 'command'
+        )
+    );
+
+}
