@@ -1919,17 +1919,16 @@ FROM restore
 
     /* For reference. Restores the last version of each NPC list from history. */
     
-    private function restoreLastNpcList() {
+    public function restoreLastNpcList() {
 
          $GLOBALS["db"]->execQuery("INSERT INTO core_npc_master (
-    id, npc_name, npc_favorite, lock_profile, prompt_head, npc_static_bio,
+    npc_name, npc_favorite, lock_profile, prompt_head, npc_static_bio,
     oghma_knowledge_tags, emote_moods, personality, relationships,
     occupation, skills, speechstyle, goals, voiceid, metadata,
     gender, race, refid, profile_id, dynamic_profile, plugin_extended_data, extended_data,
     md5, gamets_last_updated, core, base, tags, appearance
 )
-SELECT
-    npc_id AS id,
+SELECT distinct
     npc_name,
     npc_favorite,
     lock_profile,
