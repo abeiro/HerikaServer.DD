@@ -6445,8 +6445,17 @@ function call_llm_internal() {
                             if (substr($itemParam, 0, 1) === '{') {
                                 // JSON format: {"target":"","item":"0xFF00550D:Diamond"}
                                 $params = json_decode($itemParam, true);
-                                $itemParam = isset($params['item']) ? trim($params['item']) : '';
-                                Logger::info("[PickupItem PostFilter] Extracted item from JSON: '{$itemParam}'");
+                                if (is_array($params)) {
+                                    $itemParam = trim((string)($params['item'] ?? ''));
+                                    if ($itemParam === '') {
+                                        $itemParam = trim((string)($params['target'] ?? ''));
+                                        Logger::info("[PickupItem PostFilter] Item was empty; using target from JSON: '{$itemParam}'");
+                                    } else {
+                                        Logger::info("[PickupItem PostFilter] Extracted item from JSON: '{$itemParam}'");
+                                    }
+                                } else {
+                                    $itemParam = '';
+                                }
                             }
                             
                             // If still empty, can't proceed
@@ -6535,6 +6544,7 @@ function call_llm_internal() {
                             }
 
                         }
+                        // End of PickupItem
                     }
                     
                 }
