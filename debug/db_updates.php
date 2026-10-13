@@ -8907,3 +8907,9 @@ if ($checkVersion('interact_prompts') >= 20261005008 && $checkVersion('interact_
         Logger::error('Failed to refresh universal Interact guidance: '.$error->getMessage());
     }
 }
+
+if ($checkVersion("actions_issued")<20261013001) {
+    $db->execQuery("ALTER TABLE public.actions_issued ADD COLUMN IF NOT EXISTS momentum BIGINT");
+    $updateVersion("actions_issued",20261013001);
+    error_log("Applied patch actions_issued 20261013001");
+}

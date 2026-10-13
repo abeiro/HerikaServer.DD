@@ -112,7 +112,7 @@ while (!getenv('PHPUNIT_TEST') && ob_get_length() && ob_end_clean())	;
 ignore_user_abort(true);
 set_time_limit(1200);
 
-$momentum=time();
+$momentum=$GLOBALS["momentum"]=time();
 $GLOBALS["runid"]=uniqid("run_",false);
 // Array with sentences talked so far
 $talkedSoFar = array();

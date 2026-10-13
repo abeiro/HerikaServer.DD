@@ -6556,7 +6556,8 @@ function call_llm_internal() {
                         'localts'=>time(),
                         'original'=>function_exists('herikaActionCatalogApplyFollowupChainToActionsIssuedOriginal')
                             ? herikaActionCatalogApplyFollowupChainToActionsIssuedOriginal($copyActions[$n])
-                            : $copyActions[$n]
+                            : $copyActions[$n],
+                        'momentum' => $GLOBALS["momentum"]??time()    
                     )
                 );
 

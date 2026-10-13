@@ -842,6 +842,7 @@ function herikaActionCatalogGetBaseScriptProxyPrograms()
                         'gamets' => '{{game_ts}}',
                         'localts' => '{{local_ts}}',
                         'original' => '',
+                        'momentum'=>$GLOBALS["momentum"]??time(),
                     ],
                 ],
             ],
@@ -875,6 +876,7 @@ function herikaActionCatalogGetBaseScriptProxyPrograms()
                         'gamets' => '{{game_ts}}',
                         'localts' => '{{local_ts}}',
                         'original' => '',
+                        'momentum'=>$GLOBALS["momentum"]??time(),
                     ],
                 ],
             ],
@@ -992,6 +994,7 @@ function herikaActionCatalogGetBaseScriptProxyPrograms()
                         'gamets' => '{{game_ts}}',
                         'localts' => '{{local_ts}}',
                         'original' => '',
+                        'momentum' => $GLOBALS["momentum"]??time()
                     ],
                 ],
             ],
@@ -1037,6 +1040,7 @@ function herikaActionCatalogGetBaseScriptProxyPrograms()
                         'gamets' => '{{game_ts}}',
                         'localts' => '{{local_ts}}',
                         'original' => '',
+                        'momentum'=>$GLOBALS["momentum"]??time(),
                     ],
                 ],
             ],
@@ -3661,6 +3665,7 @@ function herikaActionCatalogExecuteScriptProxyDbInserts($dbInserts, $context)
 
         if (strcasecmp(strval($dbInsert['table']), 'actions_issued') === 0 && array_key_exists('original', $data)) {
             $data['original'] = herikaActionCatalogApplyFollowupChainToActionsIssuedOriginal($data['original']);
+            $data['momentum'] = $GLOBALS["momentum"]??time();
         }
 
         $GLOBALS["db"]->insert($dbInsert['table'], $data);

@@ -3074,6 +3074,7 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                     'gamets' => $currentGamets,
                     'localts' => time(),
                     'original' => chimPrepareActionsIssuedOriginalValue(''),
+                    'momentum'=>$GLOBALS["momentum"]??time(),
                 ]);
 
                 unset($actionsCopy[$n]);
@@ -3112,7 +3113,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts'=>time(),
-                        'original'=>chimPrepareActionsIssuedOriginalValue('')
+                        'original'=>chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum'=>$GLOBALS["momentum"]??time(),
                     )
                 );
 
@@ -3152,7 +3154,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts'=>time(),
-                        'original'=>chimPrepareActionsIssuedOriginalValue('')
+                        'original'=>chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum'=>$GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3181,7 +3184,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts'=>time(),
-                        'original'=>chimPrepareActionsIssuedOriginalValue('')
+                        'original'=>chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum'=>$GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3263,7 +3267,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue('')
+                        'original' => chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3306,7 +3311,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue('')
+                        'original' => chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3386,7 +3392,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue($templateKey)
+                        'original' => chimPrepareActionsIssuedOriginalValue($templateKey),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3452,7 +3459,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue($creationBrief)
+                        'original' => chimPrepareActionsIssuedOriginalValue($creationBrief),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3518,7 +3526,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue($directorBrief)
+                        'original' => chimPrepareActionsIssuedOriginalValue($directorBrief),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3599,7 +3608,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue('')
+                        'original' => chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3695,7 +3705,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts' => time(),
-                        'original' => chimPrepareActionsIssuedOriginalValue('')
+                        'original' => chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3772,7 +3783,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts'=>time(),
-                        'original'=>chimPrepareActionsIssuedOriginalValue('')
+                        'original'=>chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
@@ -3823,7 +3835,8 @@ $GLOBALS["action_post_process_fnct_ex"][]=function($actions) {
                         'ts' => $gameRequest[1],
                         'gamets' => $gameRequest[2],
                         'localts'=>time(),
-                        'original'=>chimPrepareActionsIssuedOriginalValue('')
+                        'original'=>chimPrepareActionsIssuedOriginalValue(''),
+                        'momentum' => $GLOBALS["momentum"]??time()
                     )
                 );
 
